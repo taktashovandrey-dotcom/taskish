@@ -1,0 +1,46 @@
+name: Assistant Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Commit message'
+        required: true
+        default: 'Automated update'
+      patch_base64:
+        description: 'Base64-encoded unified diff (git diff) to apply. Leave empty to just commit whatever changed.'
+        required: false
+        default: ''
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ASSISTANT_PAT }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "taskish-assistant"
+          git config user.email "assistant@users.noreply.github.com"
+
+      - name: Apply patch (if provided)
+        if: ${{ github.event.inputs.patch_base64 != '' }}
+        run: |
+          echo "${{ github.event.inputs.patch_base64 }}" | base64 -d > /tmp/change.patch
+          git apply --whitespace=nofix /tmp/change.patch
+
+      - name: Commit and push
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "${{ github.event.inputs.commit_message }}"
+            git push origin HEAD:main
+          fi
