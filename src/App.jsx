@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import chrono from 'chrono-node'
+import * as chrono from 'chrono-node'
 import { loadTasks, saveTasks } from './db'
 import localforage from 'localforage'
 import { initSupabase, getSupabase } from './supabaseClient'
