@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Taskish — быстрые задачи</title>
+    <link rel="manifest" href="/manifest.json">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Inline debug: ensure HTML loads, unregister old SW and write debug text.
+      try {
+        console.log('inline debug: HTML loaded')
+        if (navigator && navigator.serviceWorker) {
+          navigator.serviceWorker.getRegistrations().then(r=>r.forEach(reg=>reg.unregister().catch(()=>{})))
+        }
+        var el = document.getElementById('root')
+        if (el) el.innerText = 'Debug: HTML loaded — waiting for app...'
+      } catch (e) { console.warn('inline debug error', e) }
+    </script>
+    <script>
+      // Quick fetch-check of module to show status and short preview
+      (async function(){
+        try {
+          const r = await fetch('/src/main.jsx')
+          console.log('module /src/main.jsx status', r.status)
+          const text = await r.text()
+          console.log('module /src/main.jsx preview:', text.slice(0,500))
+          const el = document.getElementById('root')
+          if (el) el.innerText = 'Debug: HTML loaded — module status ' + r.status
+        } catch (e) {
+          console.error('module fetch error', e)
+          const el = document.getElementById('root')
+          if (el) el.innerText = 'Debug: HTML loaded — module fetch error: ' + (e.message||e)
+        }
+      })()
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Fallback vanilla app if React module doesn't mount
+      (function(){
+        const startFallback = () => {
+          if (window.__appMounted) return
+          const root = document.getElementById('root')
+          if (!root) return
+          root.innerHTML = ''
+          const app = document.createElement('div')
+          app.style.padding = '18px'
+          app.style.fontFamily = 'Arial, sans-serif'
+          app.innerHTML = `
+            <h1>Taskish (fallback)</h1>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input id="f-input" placeholder="Добавить задачу и нажать Enter" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc" />
+              <button id="f-add">Добавить</button>
+            </div>
+            <ul id="f-list" style="padding-left:18px"></ul>
+            <small style="color:#666">Работает в оффлайн режиме. Синхронизация и ИИ в React-версии.</small>
+          `
+          root.appendChild(app)
+          const input = document.getElementById('f-input')
+          const addBtn = document.getElementById('f-add')
+          const list = document.getElementById('f-list')
+          const load = () => JSON.parse(localStorage.getItem('taskish_fallback')||'[]')
+          const save = (arr) => localStorage.setItem('taskish_fallback', JSON.stringify(arr))
+          const render = () => {
+            list.innerHTML = ''
+            const items = load()
+            items.forEach((t, i) => {
+              const li = document.createElement('li')
+              li.style.marginBottom = '8px'
+              li.textContent = t.title
+              const del = document.createElement('button')
+              del.textContent='Удалить'
+              del.style.marginLeft='8px'
+              del.onclick = ()=>{ items.splice(i,1); save(items); render() }
+              li.appendChild(del)
+              list.appendChild(li)
+            })
+          }
+          addBtn.onclick = ()=>{ if (!input.value.trim()) return; const items=load(); items.unshift({title:input.value.trim(), created: new Date().toISOString()}); save(items); input.value=''; render() }
+          input.addEventListener('keydown', e=>{ if (e.key==='Enter') addBtn.click() })
+          render()
+        }
+        // try start fallback after 800ms if React not mounted
+        setTimeout(startFallback, 800)
+      })()
+    </script>
+  </body>
+</html>
