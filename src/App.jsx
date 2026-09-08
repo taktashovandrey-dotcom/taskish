@@ -199,6 +199,21 @@ export default function App() {
   // fetch suggestion text from OpenAI (returns string)
   async function fetchAISuggestionText(task, key) {
     const prompt = `Анализ задачи: "${task.title}". Предложи приоритет (low/medium/high), 3 шага для выполнения, и примерное время в минутах для каждого шага.`
+    // If a server-side proxy URL is set in settings, use it (safer: keeps OpenAI key on server)
+    const s = settings || (await localforage.getItem('settings'))
+    if (s?.openaiProxyUrl) {
+      const headers = { 'Content-Type': 'application/json' }
+      if (s.openaiProxySecret) headers['x-proxy-secret'] = s.openaiProxySecret
+      const resp = await fetch(s.openaiProxyUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 400 })
+      })
+      const j = await resp.json()
+      return j?.choices?.[0]?.message?.content || JSON.stringify(j)
+    }
+
+    // Fallback: direct client-side call (requires user-provided OpenAI key)
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
