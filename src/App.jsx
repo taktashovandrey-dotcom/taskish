@@ -199,6 +199,21 @@ export default function App() {
   // fetch suggestion text from OpenAI (returns string)
   async function fetchAISuggestionText(task, key) {
     const prompt = `Анализ задачи: "${task.title}". Предложи приоритет (low/medium/high), 3 шага для выполнения, и примерное время в минутах для каждого шага.`
+    // If a server-side proxy URL is set in settings, use it (safer: keeps OpenAI key on server)
+    const s = settings || (await localforage.getItem('settings'))
+    if (s?.openaiProxyUrl) {
+      const headers = { 'Content-Type': 'application/json' }
+      if (s.openaiProxySecret) headers['x-proxy-secret'] = s.openaiProxySecret
+      const resp = await fetch(s.openaiProxyUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 400 })
+      })
+      const j = await resp.json()
+      return j?.choices?.[0]?.message?.content || JSON.stringify(j)
+    }
+
+    // Fallback: direct client-side call (requires user-provided OpenAI key)
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -274,7 +289,9 @@ export default function App() {
                 <input type="checkbox" checked={t.done} onChange={() => toggleDone(t.id)} />
                 <div className="task-content">
                   <div className="task-title">{t.title}</div>
-                  <div className="task-meta">{t.priority} • {t.due ? formatDate(t.due) : 'Без срока'}</div>
+                  <div className="task-meta">{t.due ? formatDate(t.due) : 'Без срока'}
+                    <span className={`priority-badge priority-${t.priority||'medium'}`}>{t.priority}</span>
+                  </div>
                 </div>
               </div>
               <div className="task-actions">
@@ -300,10 +317,12 @@ export default function App() {
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoSync} onChange={e=>setSettings({...settings,autoSync:e.target.checked})} /> Автосинхронизация</label>
           <label style={{display:'flex',gap:8,alignItems:'center'}}><span>Интервал (мин):</span><input type="number" min={1} value={settings.autoSyncInterval} onChange={e=>setSettings({...settings,autoSyncInterval:e.target.value})} style={{width:80}} /></label>
           <hr />
-          <input value={settings.openaiKey} onChange={e=>setSettings({...settings,openaiKey:e.target.value})} placeholder="OpenAI API Key (по желанию)" />
+          <input value={settings.openaiProxyUrl || ''} onChange={e=>setSettings({...settings,openaiProxyUrl:e.target.value})} placeholder="OpenAI proxy URL (e.g. https://site.vercel.app/api/openai-proxy)" />
+          <input value={settings.openaiProxySecret || ''} onChange={e=>setSettings({...settings,openaiProxySecret:e.target.value})} placeholder="Proxy secret (если используетcя)" />
+          <input value={settings.openaiKey} onChange={e=>setSettings({...settings,openaiKey:e.target.value})} placeholder="OpenAI API Key (по желанию, используется если proxy не указан)" />
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoAi} onChange={e=>setSettings({...settings,autoAi:e.target.checked})} /> Автопросмотр ИИ при добавлении задачи</label>
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoAiApply} onChange={e=>setSettings({...settings,autoAiApply:e.target.checked})} /> Автоприменять предложения ИИ (внимание: может расходовать токены)</label>
-          <small>Ключ хранится локально в браузере и не отправляется на сервер проекта.</small>
+          <small>Ключ хранится локально в браузере и не отправляется на сервер проекта, если не указан proxy. Proxy рекомендуется для безопасности.</small>
         </div>
       </section>
       <SuggestionModal open={suggestionOpen} suggestion={suggestionText} onClose={()=>setSuggestionOpen(false)} onApply={applySuggestion} />

@@ -27,8 +27,36 @@ Supabase
 - Create a Supabase project and a table `tasks` with columns matching the task shape: `id text primary key`, `title text`, `description text`, `created_at timestamp`, `updated_at timestamp`, `due timestamp`, `priority text`, `tags text[]`, `done boolean`, `notified boolean`.
 - Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to your app settings or save in local settings in the UI.
 
+Quick Supabase setup
+1. In Supabase Console, create a new project.
+2. Open SQL Editor and run the SQL in `db/init.sql` (or paste the following):
+
+```sql
+-- see db/init.sql in repository
+```
+
+3. For client usage you can either:
+	- Enter Supabase URL and ANON key in the app Settings UI (stored locally), or
+	- Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to your deployment environment (see `.env.example`) so the app auto-initializes on build.
+
+Notes on keys: Use the ANON key for client-side features only. Do not expose `service_role` keys in client builds.
+
 OpenAI
 - The app supports client-side OpenAI keys stored locally in the browser settings. For production, consider a server-side proxy to avoid exposing keys.
+
+Server proxy for OpenAI (recommended)
+
+1. Deploy a serverless proxy (examples included):
+	- Vercel: `api/openai-proxy.js`
+	- Netlify: `netlify/functions/openai-proxy.js`
+
+2. Set environment variables on the server platform:
+	- `OPENAI_API_KEY` — your OpenAI API key (server-side only)
+	- Optional: `PROXY_SECRET` — a secret string to require from clients in header `x-proxy-secret`.
+
+3. In the app Settings (in-browser), set `openaiProxyUrl` to your deployed proxy URL (e.g. `https://your-site.vercel.app/api/openai-proxy`) and, if used, set `openaiProxySecret` (this will be sent from the client as `x-proxy-secret`).
+
+Security note: storing a proxy secret in the browser exposes it to users and is not fully secure — prefer server-side authenticated flows or restrict proxy by origin and rate limits. The proxy keeps your `OPENAI_API_KEY` off the client which is the main benefit.
 
 Security note
 - If any PAT was exposed, revoke it immediately in GitHub Settings → Developer settings → Personal access tokens.
