@@ -317,10 +317,12 @@ export default function App() {
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoSync} onChange={e=>setSettings({...settings,autoSync:e.target.checked})} /> Автосинхронизация</label>
           <label style={{display:'flex',gap:8,alignItems:'center'}}><span>Интервал (мин):</span><input type="number" min={1} value={settings.autoSyncInterval} onChange={e=>setSettings({...settings,autoSyncInterval:e.target.value})} style={{width:80}} /></label>
           <hr />
-          <input value={settings.openaiKey} onChange={e=>setSettings({...settings,openaiKey:e.target.value})} placeholder="OpenAI API Key (по желанию)" />
+          <input value={settings.openaiProxyUrl || ''} onChange={e=>setSettings({...settings,openaiProxyUrl:e.target.value})} placeholder="OpenAI proxy URL (e.g. https://site.vercel.app/api/openai-proxy)" />
+          <input value={settings.openaiProxySecret || ''} onChange={e=>setSettings({...settings,openaiProxySecret:e.target.value})} placeholder="Proxy secret (если используетcя)" />
+          <input value={settings.openaiKey} onChange={e=>setSettings({...settings,openaiKey:e.target.value})} placeholder="OpenAI API Key (по желанию, используется если proxy не указан)" />
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoAi} onChange={e=>setSettings({...settings,autoAi:e.target.checked})} /> Автопросмотр ИИ при добавлении задачи</label>
           <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={settings.autoAiApply} onChange={e=>setSettings({...settings,autoAiApply:e.target.checked})} /> Автоприменять предложения ИИ (внимание: может расходовать токены)</label>
-          <small>Ключ хранится локально в браузере и не отправляется на сервер проекта.</small>
+          <small>Ключ хранится локально в браузере и не отправляется на сервер проекта, если не указан proxy. Proxy рекомендуется для безопасности.</small>
         </div>
       </section>
       <SuggestionModal open={suggestionOpen} suggestion={suggestionText} onClose={()=>setSuggestionOpen(false)} onApply={applySuggestion} />
