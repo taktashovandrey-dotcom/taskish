@@ -289,7 +289,9 @@ export default function App() {
                 <input type="checkbox" checked={t.done} onChange={() => toggleDone(t.id)} />
                 <div className="task-content">
                   <div className="task-title">{t.title}</div>
-                  <div className="task-meta">{t.priority} • {t.due ? formatDate(t.due) : 'Без срока'}</div>
+                  <div className="task-meta">{t.due ? formatDate(t.due) : 'Без срока'}
+                    <span className={`priority-badge priority-${t.priority||'medium'}`}>{t.priority}</span>
+                  </div>
                 </div>
               </div>
               <div className="task-actions">

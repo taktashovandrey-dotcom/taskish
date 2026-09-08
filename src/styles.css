@@ -3,6 +3,9 @@
   --card:#0b1220;
   --accent:#7c3aed;
   --muted:#94a3b8;
+  --priority-low:#16a34a;
+  --priority-medium:#f59e0b;
+  --priority-high:#ef4444;
 }
 body{font-family:Inter, system-ui, Arial, sans-serif; margin:0; background:linear-gradient(180deg,#071024 0%, #0b1220 100%); color:#e6eef8}
 .app{max-width:720px;margin:24px auto;padding:20px}
@@ -18,4 +21,9 @@ header p{color:var(--muted);margin:6px 0 18px}
 .task-meta{color:var(--muted);font-size:12px}
 .task-actions button{margin-left:8px;padding:6px 8px;border-radius:6px;background:#0d1a2b;border:1px solid #203040;color:var(--muted)}
 .done{opacity:0.6;text-decoration:line-through}
+/* priority badges */
+.priority-badge{display:inline-block;padding:2px 8px;border-radius:999px;color:#021123;font-weight:700;font-size:12px;margin-left:8px}
+.priority-low{background:var(--priority-low)}
+.priority-medium{background:var(--priority-medium)}
+.priority-high{background:var(--priority-high)}
 footer{margin-top:20px;color:var(--muted)}
