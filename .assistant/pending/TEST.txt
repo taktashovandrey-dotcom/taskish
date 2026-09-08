@@ -1,0 +1,2 @@
+assistant push test file
+This file will be copied to repository root when the Assistant Push workflow runs.

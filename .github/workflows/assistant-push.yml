@@ -2,45 +2,40 @@ name: Assistant Push
 
 on:
   workflow_dispatch:
-    inputs:
-      commit_message:
-        description: 'Commit message'
-        required: true
-        default: 'Automated update'
-      patch_base64:
-        description: 'Base64-encoded unified diff (git diff) to apply. Leave empty to just commit whatever changed.'
-        required: false
-        default: ''
+  schedule:
+    - cron: '0 1 * * *' # daily at 01:00 UTC
 
 jobs:
-  push:
+  assistant-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ASSISTANT_PAT }}
           fetch-depth: 0
 
-      - name: Configure git
+      - name: Setup git user
         run: |
-          git config user.name "taskish-assistant"
-          git config user.email "assistant@users.noreply.github.com"
+          git config user.name "Assistant CI"
+          git config user.email "assistant@local"
 
-      - name: Apply patch (if provided)
-        if: ${{ github.event.inputs.patch_base64 != '' }}
+      - name: Ensure assistant helper is executable
         run: |
-          echo "${{ github.event.inputs.patch_base64 }}" | base64 -d > /tmp/change.patch
-          git apply --whitespace=nofix /tmp/change.patch
+          if [ -f .github/assistant/assistant-apply.sh ]; then chmod +x .github/assistant/assistant-apply.sh; fi
 
-      - name: Commit and push
+      - name: Run assistant apply script
         run: |
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "${{ github.event.inputs.commit_message }}"
-            git push origin HEAD:main
-          fi
+          if [ -f .github/assistant/assistant-apply.sh ]; then .github/assistant/assistant-apply.sh ; else echo "No assistant-apply.sh found"; fi
+
+      - name: Create Pull Request for changes
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Assistant: apply changes"
+          title: "Assistant: apply automated changes"
+          body: |
+            This PR was created automatically by the Assistant Push workflow.
+            It applies files from `.assistant/pending/` so you can review before merging.
+          base: ${{ github.ref_name }}
+          branch: assistant/auto-${{ github.run_id }}
+          labels: automated,assistant

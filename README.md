@@ -1,3 +1,40 @@
+# Taskish — quick task PWA
+
+Minimal prototype for quick tasks with optional Supabase sync and AI suggestions.
+
+Quick start (dev):
+
+```powershell
+cd "c:\Users\takta\ЗАдачник"
+npm ci
+npm run dev
+```
+
+Build and deploy (locally):
+
+```powershell
+npm run build
+# serve the dist/ folder with any static server
+```
+
+GitHub Pages deploy is configured via Actions (`.github/workflows/deploy-gh-pages.yml`). The workflow builds and deploys `dist/` to the `gh-pages` branch on push to `main`.
+
+Assistant automation
+- `.github/workflows/assistant-push.yml` creates PRs from files placed into `.assistant/pending/`.
+- The assistant can be configured to run nightly; changes are proposed as PRs for review.
+
+Supabase
+- Create a Supabase project and a table `tasks` with columns matching the task shape: `id text primary key`, `title text`, `description text`, `created_at timestamp`, `updated_at timestamp`, `due timestamp`, `priority text`, `tags text[]`, `done boolean`, `notified boolean`.
+- Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to your app settings or save in local settings in the UI.
+
+OpenAI
+- The app supports client-side OpenAI keys stored locally in the browser settings. For production, consider a server-side proxy to avoid exposing keys.
+
+Security note
+- If any PAT was exposed, revoke it immediately in GitHub Settings → Developer settings → Personal access tokens.
+- Store secrets only in GitHub Secrets or environment variables — never in code or chat.
+
+If you want, I will continue by finishing UX polish, wiring Supabase end-to-end, and adding an optional serverless proxy for OpenAI suggestions.
 # Taskish — быстрый задачник (прототип)
 
 Лёгкий PWA-прототип для быстрого добавления задач с NL-парсингом и локальным хранением.
